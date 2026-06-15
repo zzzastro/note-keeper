@@ -27,6 +27,35 @@ class NoteResponse(BaseModel):
     is_archived: bool
     created_at: datetime
     updated_at: datetime
+    user_id: int
 
     class Config:
         from_attributes = True
+
+
+class UserCreate(BaseModel):
+    email: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    refresh_token: str

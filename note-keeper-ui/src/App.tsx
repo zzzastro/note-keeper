@@ -1,11 +1,22 @@
 import { useEffect, useState } from 'react'
 import type { Note } from './types'
 import { fetchNotes, createNote, updateNote, deleteNote, togglePin, patchNote } from './api'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import NoteCard from './components/NoteCard'
 import CreateNote from './components/CreateNote'
 import EditModal from './components/EditModal'
+import AuthPage from './components/AuthPage'
 
 export default function App() {
+  return (
+    <AuthProvider>
+      <Main />
+    </AuthProvider>
+  )
+}
+
+function Main() {
+  const { user, logout } = useAuth()
   const [notes, setNotes] = useState<Note[]>([])
   const [search, setSearch] = useState('')
   const [showPinned, setShowPinned] = useState(false)
@@ -16,7 +27,9 @@ export default function App() {
     setNotes(data)
   }
 
-  useEffect(() => { load() }, [search, showPinned])
+  useEffect(() => { if (user) load() }, [user, search, showPinned])
+
+  if (!user) return <AuthPage />
 
   const handleCreate = async (title: string, content: string) => {
     await createNote({ title: title || 'Untitled', content })
@@ -71,6 +84,13 @@ export default function App() {
             }`}
           >
             {showPinned ? 'All Notes' : 'Pinned'}
+          </button>
+          <span className="text-sm text-gray-400 hidden sm:inline">{user.email}</span>
+          <button
+            onClick={logout}
+            className="px-3 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition cursor-pointer"
+          >
+            Logout
           </button>
         </div>
       </header>

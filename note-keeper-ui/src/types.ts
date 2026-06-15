@@ -7,6 +7,7 @@ export interface Note {
   is_archived: boolean
   created_at: string
   updated_at: string
+  user_id: number
 }
 
 export interface NoteCreate {
@@ -21,4 +22,15 @@ export interface NoteUpdate {
   color?: string
   is_pinned?: boolean
   is_archived?: boolean
+}
+
+export interface User {
+  id: number
+  email: string
+}
+
+export interface AuthResponse {
+  access_token: string
+  token_type: string
+  refresh_token: string
 }
