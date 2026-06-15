@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Note } from './types'
-import { fetchNotes, createNote, updateNote, deleteNote, togglePin, patchNote } from './api'
+import { fetchNotes, createNote, updateNote, deleteNote, togglePin, patchNote, deleteAccount } from './api'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import NoteCard from './components/NoteCard'
 import CreateNote from './components/CreateNote'
@@ -56,6 +56,14 @@ function Main() {
     await load()
   }
 
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Delete your account permanently? All notes will be lost.')) return
+    await deleteAccount()
+    localStorage.removeItem('token')
+    localStorage.removeItem('refresh_token')
+    window.location.reload()
+  }
+
   const pinned = notes.filter((n) => n.is_pinned)
   const unpinned = notes.filter((n) => !n.is_pinned)
 
@@ -91,6 +99,12 @@ function Main() {
             className="px-3 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition cursor-pointer"
           >
             Logout
+          </button>
+          <button
+            onClick={handleDeleteAccount}
+            className="px-3 py-1.5 text-sm rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition cursor-pointer"
+          >
+            Delete
           </button>
         </div>
       </header>

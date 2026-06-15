@@ -83,13 +83,39 @@ def refresh(req: schemas.RefreshRequest, db: Session = Depends(database.get_db))
     }
 
 
-@app.post("/logout", status_code=204)
+@app.post("/logout")
 def logout(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
     auth.revoke_all_tokens(db, current_user.id)
-    return None
+    return {
+        "message": "Logged out successfully",
+        "email": current_user.email,
+        "token_version": current_user.token_version,
+    }
+
+
+@app.delete("/account")
+def delete_account(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    notes_count = db.query(models.Note).filter(
+        models.Note.user_id == current_user.id
+    ).count()
+    db.query(models.RefreshToken).filter(
+        models.RefreshToken.user_id == current_user.id
+    ).delete()
+    db.query(models.Note).filter(models.Note.user_id == current_user.id).delete()
+    email = current_user.email
+    db.delete(current_user)
+    db.commit()
+    return {
+        "message": "Account deleted",
+        "email": email,
+        "notes_deleted": notes_count,
+    }
 
 
 @app.post("/notes", response_model=schemas.NoteResponse, status_code=201)
@@ -201,7 +227,7 @@ def toggle_pin(
     return db_note
 
 
-@app.delete("/notes/{note_id}", status_code=204)
+@app.delete("/notes/{note_id}")
 def delete_note(
     note_id: int,
     db: Session = Depends(database.get_db),
@@ -214,6 +240,11 @@ def delete_note(
     )
     if not db_note:
         raise HTTPException(status_code=404, detail="Note not found")
+    title = db_note.title
     db.delete(db_note)
     db.commit()
-    return None
+    return {
+        "message": "Note deleted",
+        "id": note_id,
+        "title": title,
+    }

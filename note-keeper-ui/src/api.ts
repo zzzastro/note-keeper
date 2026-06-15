@@ -137,6 +137,19 @@ export async function togglePin(id: number): Promise<Note> {
   return handleResponse(res)
 }
 
+export async function deleteAccount(): Promise<void> {
+  const token = localStorage.getItem('token')
+  if (!token) return
+  const res = await fetch(`${BASE_URL}/account`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }))
+    throw new Error(err.detail || 'Delete account failed')
+  }
+}
+
 export async function logout(): Promise<void> {
   const token = localStorage.getItem('token')
   if (!token) return
