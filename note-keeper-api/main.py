@@ -40,6 +40,13 @@ app = FastAPI(
     title="Note Keeper API",
     description="A Google Keep clone API",
     version="1.0.0",
+    openapi_tags=[
+        {"name": "System", "description": "Health check"},
+        {"name": "Auth", "description": "Register, login, refresh, logout"},
+        {"name": "Account", "description": "Delete account"},
+        {"name": "Notes", "description": "CRUD for notes"},
+        {"name": "Admin", "description": "Admin-only operations"},
+    ],
 )
 
 app.add_middleware(
@@ -51,12 +58,12 @@ app.add_middleware(
 )
 
 
-@app.get("/")
+@app.get("/", tags=["System"])
 def root():
     return {"message": "Note Keeper API — go to /docs for Swagger UI"}
 
 
-@app.post("/register", response_model=schemas.UserResponse, status_code=201)
+@app.post("/register", response_model=schemas.UserResponse, status_code=201, tags=["Auth"])
 def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     existing = db.query(models.User).filter(models.User.email == user.email).first()
     if existing:
@@ -72,7 +79,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     return db_user
 
 
-@app.post("/login", response_model=schemas.Token)
+@app.post("/login", response_model=schemas.Token, tags=["Auth"])
 def login(credentials: schemas.LoginRequest, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == credentials.email).first()
     if not user or not auth.verify_password(credentials.password, user.hashed_password):
@@ -91,7 +98,7 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(database.get_
     }
 
 
-@app.post("/refresh", response_model=schemas.Token)
+@app.post("/refresh", response_model=schemas.Token, tags=["Auth"])
 def refresh(req: schemas.RefreshRequest, db: Session = Depends(database.get_db)):
     db_token = auth.verify_refresh_token(db, req.refresh_token)
     user = db.query(models.User).filter(models.User.id == db_token.user_id).first()
@@ -111,7 +118,7 @@ def refresh(req: schemas.RefreshRequest, db: Session = Depends(database.get_db))
     }
 
 
-@app.post("/logout")
+@app.post("/logout", tags=["Auth"])
 def logout(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user),
@@ -124,7 +131,7 @@ def logout(
     }
 
 
-@app.delete("/account")
+@app.delete("/account", tags=["Account"])
 def delete_account(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user),
@@ -146,7 +153,7 @@ def delete_account(
     }
 
 
-@app.get("/admin/users")
+@app.get("/admin/users", tags=["Admin"])
 def admin_list_users(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.require_admin),
@@ -164,7 +171,7 @@ def admin_list_users(
     ]
 
 
-@app.patch("/admin/users/{user_id}")
+@app.patch("/admin/users/{user_id}", tags=["Admin"])
 def admin_update_user(
     user_id: int,
     data: schemas.UserUpdate,
@@ -185,7 +192,7 @@ def admin_update_user(
     return {"id": user.id, "email": user.email, "is_admin": user.is_admin}
 
 
-@app.get("/admin/notes")
+@app.get("/admin/notes", tags=["Admin"])
 def admin_list_notes(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.require_admin),
@@ -208,7 +215,7 @@ def admin_list_notes(
     ]
 
 
-@app.delete("/admin/users/{user_id}")
+@app.delete("/admin/users/{user_id}", tags=["Admin"])
 def admin_delete_user(
     user_id: int,
     db: Session = Depends(database.get_db),
@@ -227,7 +234,7 @@ def admin_delete_user(
     return {"message": "User deleted", "email": email}
 
 
-@app.patch("/admin/users/{user_id}/admin")
+@app.patch("/admin/users/{user_id}/admin", tags=["Admin"])
 def admin_toggle_admin(
     user_id: int,
     db: Session = Depends(database.get_db),
@@ -243,7 +250,7 @@ def admin_toggle_admin(
     return {"id": user.id, "email": user.email, "is_admin": user.is_admin}
 
 
-@app.get("/admin/stats")
+@app.get("/admin/stats", tags=["Admin"])
 def admin_stats(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.require_admin),
@@ -260,7 +267,7 @@ def admin_stats(
     }
 
 
-@app.delete("/admin/notes/{note_id}")
+@app.delete("/admin/notes/{note_id}", tags=["Admin"])
 def admin_delete_note(
     note_id: int,
     db: Session = Depends(database.get_db),
@@ -275,7 +282,7 @@ def admin_delete_note(
     return {"message": "Note deleted", "id": note_id, "title": title}
 
 
-@app.get("/admin/export")
+@app.get("/admin/export", tags=["Admin"])
 def admin_export(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.require_admin),
@@ -301,7 +308,7 @@ def admin_export(
     }
 
 
-@app.post("/notes", response_model=schemas.NoteResponse, status_code=201)
+@app.post("/notes", response_model=schemas.NoteResponse, status_code=201, tags=["Notes"])
 def create_note(
     note: schemas.NoteCreate,
     db: Session = Depends(database.get_db),
@@ -314,7 +321,7 @@ def create_note(
     return db_note
 
 
-@app.get("/notes", response_model=list[schemas.NoteResponse])
+@app.get("/notes", response_model=list[schemas.NoteResponse], tags=["Notes"])
 def list_notes(
     search: Optional[str] = Query(None),
     pinned: Optional[bool] = Query(None),
@@ -332,7 +339,7 @@ def list_notes(
     return query.order_by(models.Note.updated_at.desc()).all()
 
 
-@app.get("/notes/{note_id}", response_model=schemas.NoteResponse)
+@app.get("/notes/{note_id}", response_model=schemas.NoteResponse, tags=["Notes"])
 def get_note(
     note_id: int,
     db: Session = Depends(database.get_db),
@@ -348,7 +355,7 @@ def get_note(
     return note
 
 
-@app.put("/notes/{note_id}", response_model=schemas.NoteResponse)
+@app.put("/notes/{note_id}", response_model=schemas.NoteResponse, tags=["Notes"])
 def update_note(
     note_id: int,
     note: schemas.NoteCreate,
@@ -369,7 +376,7 @@ def update_note(
     return db_note
 
 
-@app.patch("/notes/{note_id}", response_model=schemas.NoteResponse)
+@app.patch("/notes/{note_id}", response_model=schemas.NoteResponse, tags=["Notes"])
 def patch_note(
     note_id: int,
     note: schemas.NoteUpdate,
@@ -391,7 +398,7 @@ def patch_note(
     return db_note
 
 
-@app.patch("/notes/{note_id}/pin", response_model=schemas.NoteResponse)
+@app.patch("/notes/{note_id}/pin", response_model=schemas.NoteResponse, tags=["Notes"])
 def toggle_pin(
     note_id: int,
     db: Session = Depends(database.get_db),
@@ -410,7 +417,7 @@ def toggle_pin(
     return db_note
 
 
-@app.delete("/notes/{note_id}")
+@app.delete("/notes/{note_id}", tags=["Notes"])
 def delete_note(
     note_id: int,
     db: Session = Depends(database.get_db),
