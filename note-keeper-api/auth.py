@@ -105,3 +105,9 @@ def get_current_user(
     if token_version != user.token_version:
         raise HTTPException(status_code=401, detail="Token has been invalidated")
     return user
+
+
+def require_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user

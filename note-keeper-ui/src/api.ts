@@ -1,4 +1,4 @@
-import type { Note, NoteCreate, NoteUpdate, User, AuthResponse } from './types'
+import type { Note, NoteCreate, NoteUpdate, User, AuthResponse, AdminNote, AdminStats } from './types'
 
 const BASE_URL = 'http://localhost:8004'
 
@@ -148,6 +148,53 @@ export async function deleteAccount(): Promise<void> {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
     throw new Error(err.detail || 'Delete account failed')
   }
+}
+
+export async function fetchAdminUsers(): Promise<User[]> {
+  const res = await apiFetch('/admin/users')
+  return handleResponse(res)
+}
+
+export async function fetchAdminNotes(): Promise<AdminNote[]> {
+  const res = await apiFetch('/admin/notes')
+  return handleResponse(res)
+}
+
+export async function fetchAdminStats(): Promise<AdminStats> {
+  const res = await apiFetch('/admin/stats')
+  return handleResponse(res)
+}
+
+export async function deleteAdminNote(noteId: number): Promise<void> {
+  const res = await apiFetch(`/admin/notes/${noteId}`, { method: 'DELETE' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }))
+    throw new Error(err.detail || 'Request failed')
+  }
+}
+
+export async function deleteAdminUser(userId: number): Promise<void> {
+  const res = await apiFetch(`/admin/users/${userId}`, { method: 'DELETE' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }))
+    throw new Error(err.detail || 'Request failed')
+  }
+}
+
+export async function patchAdminUser(userId: number, data: { email?: string; password?: string }): Promise<void> {
+  await apiFetch(`/admin/users/${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function toggleAdminUser(userId: number): Promise<void> {
+  await apiFetch(`/admin/users/${userId}/admin`, { method: 'PATCH' })
+}
+
+export async function exportAdminData(): Promise<any> {
+  const res = await apiFetch('/admin/export')
+  return handleResponse(res)
 }
 
 export async function logout(): Promise<void> {

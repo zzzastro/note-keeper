@@ -13,6 +13,8 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     hashed_password = Column(String, nullable=False)
     token_version = Column(Integer, default=0)
+    is_admin = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     notes = relationship("Note", back_populates="user")
 
 

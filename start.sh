@@ -1,6 +1,8 @@
 #!/bin/bash
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
+[ -f "$DIR/.env" ] && set -a && source "$DIR/.env" && set +a
+
 cleanup() {
   echo "Stopping..."
   kill $API_PID $UI_PID 2>/dev/null

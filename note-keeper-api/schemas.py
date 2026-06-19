@@ -47,6 +47,11 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+class UserUpdate(BaseModel):
+    email: Optional[str] = None
+    password: Optional[str] = None
+
+
 class UserResponse(BaseModel):
     id: int
     email: str
